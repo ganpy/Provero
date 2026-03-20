@@ -1,0 +1,32 @@
+# Environment variables - NEVER commit this
+.env
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Database
+*.db
+*.sqlite
+
+# Temp files
+/tmp/
+*.zip
+*.csv
+
+# macOS
+.DS_Store
+
+# Playwright
+playwright/.local-chromium/
+.venv/
+.claude/
+stripe_backup_code.txt
+*_debug.html
+texas_debug.html
+texas_detail_debug.html
+wyoming_debug.html
+wyoming_detail_debug.html
