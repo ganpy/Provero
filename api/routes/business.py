@@ -14,7 +14,7 @@ SUPPORTED_STATES = {
     "NY": "New York",
 }
 
-@router.get("/business/search", response_model=BusinessSearchResponse)
+@router.get("/search", response_model=BusinessSearchResponse)
 def search_business(
     name: str = Query(..., min_length=2),
     state: str = Query(..., min_length=2, max_length=2),
@@ -45,7 +45,7 @@ def search_business(
         count=len(results),
     )
 
-@router.get("/business/lookup/{entity_number}", response_model=BusinessResponse)
+@router.get("/lookup/{entity_number}", response_model=BusinessResponse)
 def lookup_business(
     entity_number: str,
     state: str = Query(..., min_length=2, max_length=2),
@@ -62,6 +62,6 @@ def lookup_business(
         raise HTTPException(status_code=404, detail="Business not found")
     return BusinessResponse.model_validate(result)
 
-@router.get("/business/states")
+@router.get("/states")
 def list_states(api_key=Depends(verify_api_key)):
     return {"states": [{"code": k, "name": v} for k, v in SUPPORTED_STATES.items()]}
