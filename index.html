@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Provero — US Business Verification API</title>
+  <meta name="description" content="Instant access to verified US business entity data. Search millions of corporations, LLCs, and partnerships across multiple states via a simple REST API." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #080810;
+      --bg2: #0f0f1a;
+      --bg3: #14141f;
+      --border: rgba(124,58,237,0.2);
+      --purple: #7c3aed;
+      --purple-light: #a78bfa;
+      --purple-glow: rgba(124,58,237,0.15);
+      --text: #f1f0ff;
+      --muted: #8b8aa0;
+      --green: #10b981;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.2rem 6%;
+      background: rgba(8,8,16,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fff 0%, var(--purple-light) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    nav .nav-links { display: flex; align-items: center; gap: 2rem; }
+    nav .nav-links a { color: var(--muted); font-size: 0.9rem; font-weight: 500; transition: color 0.2s; }
+    nav .nav-links a:hover { color: var(--text); }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.65rem 1.4rem; border-radius: 8px;
+      font-weight: 600; font-size: 0.9rem; cursor: pointer;
+      transition: all 0.2s; border: none;
+    }
+
+    .btn-primary {
+      background: var(--purple);
+      color: #fff;
+      box-shadow: 0 0 20px rgba(124,58,237,0.4);
+    }
+    .btn-primary:hover { background: #6d28d9; box-shadow: 0 0 30px rgba(124,58,237,0.6); transform: translateY(-1px); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-outline:hover { border-color: var(--purple-light); color: var(--purple-light); }
+
+    /* HERO */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center;
+      padding: 8rem 6% 5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute; top: -200px; left: 50%; transform: translateX(-50%);
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.4rem 1rem; border-radius: 100px;
+      background: var(--purple-glow); border: 1px solid var(--border);
+      font-size: 0.8rem; font-weight: 600; color: var(--purple-light);
+      margin-bottom: 2rem; letter-spacing: 0.5px; text-transform: uppercase;
+    }
+
+    .hero-badge span { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    h1 {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 800; line-height: 1.1;
+      letter-spacing: -1.5px; margin-bottom: 1.5rem;
+    }
+
+    h1 .highlight {
+      background: linear-gradient(135deg, var(--purple-light) 0%, #c4b5fd 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      font-size: 1.2rem; color: var(--muted); max-width: 560px;
+      margin: 0 auto 2.5rem; font-weight: 400;
+    }
+
+    .hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 4rem; }
+
+    .hero-stats {
+      display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap;
+      padding-top: 3rem; border-top: 1px solid var(--border);
+    }
+
+    .stat { text-align: center; }
+    .stat-num { font-size: 2rem; font-weight: 800; color: var(--text); }
+    .stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 0.2rem; }
+
+    /* CODE DEMO */
+    .demo-section {
+      padding: 5rem 6%;
+      background: var(--bg2);
+    }
+
+    .section-label {
+      font-size: 0.8rem; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--purple-light);
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      font-weight: 800; letter-spacing: -0.5px; margin-bottom: 1rem;
+    }
+
+    .section-sub { color: var(--muted); max-width: 480px; margin-bottom: 3rem; }
+
+    .demo-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+      max-width: 1000px; margin: 0 auto;
+    }
+
+    @media (max-width: 768px) { .demo-grid { grid-template-columns: 1fr; } }
+
+    .code-block {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+
+    .code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1.2rem;
+      background: rgba(124,58,237,0.08); border-bottom: 1px solid var(--border);
+    }
+
+    .code-title { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+    .code-dots { display: flex; gap: 6px; }
+    .code-dots span { width: 10px; height: 10px; border-radius: 50%; }
+    .code-dots span:nth-child(1) { background: #ff5f56; }
+    .code-dots span:nth-child(2) { background: #ffbd2e; }
+    .code-dots span:nth-child(3) { background: #27c93f; }
+
+    pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem; line-height: 1.7;
+      padding: 1.5rem; overflow-x: auto;
+      color: #d4d0ff;
+    }
+
+    .token-purple { color: #a78bfa; }
+    .token-green { color: #6ee7b7; }
+    .token-yellow { color: #fde68a; }
+    .token-blue { color: #93c5fd; }
+    .token-muted { color: #6b7280; }
+
+    /* FEATURES */
+    .features-section { padding: 5rem 6%; text-align: center; }
+
+    .features-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem; max-width: 1000px; margin: 3rem auto 0;
+    }
+
+    .feature-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 2rem;
+      text-align: left; transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .feature-card:hover { border-color: var(--purple); transform: translateY(-4px); }
+
+    .feature-icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: var(--purple-glow); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.2rem; margin-bottom: 1.2rem;
+    }
+
+    .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .feature-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+    /* STATES */
+    .states-section {
+      padding: 5rem 6%;
+      background: var(--bg2); text-align: center;
+    }
+
+    .states-grid {
+      display: flex; flex-wrap: wrap; gap: 1rem;
+      justify-content: center; margin-top: 2.5rem;
+    }
+
+    .state-badge {
+      display: flex; align-items: center; gap: 0.6rem;
+      padding: 0.6rem 1.2rem; border-radius: 100px;
+      background: var(--bg3); border: 1px solid var(--border);
+      font-size: 0.9rem; font-weight: 600;
+    }
+
+    .state-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+
+    /* PRICING */
+    .pricing-section { padding: 5rem 6%; text-align: center; }
+
+    .pricing-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem; max-width: 900px; margin: 3rem auto 0;
+    }
+
+    .pricing-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 2.5rem 2rem;
+      text-align: left; position: relative; transition: transform 0.2s;
+    }
+
+    .pricing-card:hover { transform: translateY(-4px); }
+
+    .pricing-card.featured {
+      border-color: var(--purple);
+      background: linear-gradient(135deg, rgba(124,58,237,0.1) 0%, var(--bg2) 100%);
+    }
+
+    .featured-badge {
+      position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      background: var(--purple); color: #fff;
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;
+      padding: 0.3rem 1rem; border-radius: 100px; white-space: nowrap;
+    }
+
+    .plan-name { font-size: 0.85rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+    .plan-price {
+      font-size: 2.8rem; font-weight: 800; margin: 0.8rem 0 0.3rem;
+      letter-spacing: -1px;
+    }
+
+    .plan-price span { font-size: 1rem; font-weight: 500; color: var(--muted); }
+    .plan-desc { font-size: 0.9rem; color: var(--muted); margin-bottom: 2rem; }
+
+    .plan-features { list-style: none; margin-bottom: 2rem; }
+    .plan-features li {
+      display: flex; align-items: center; gap: 0.6rem;
+      font-size: 0.9rem; padding: 0.45rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .plan-features li:last-child { border-bottom: none; }
+    .plan-features li::before { content: '✓'; color: var(--green); font-weight: 700; font-size: 0.85rem; }
+
+    .plan-btn {
+      width: 100%; padding: 0.85rem; border-radius: 10px;
+      font-weight: 700; font-size: 0.95rem; cursor: pointer; border: none;
+      transition: all 0.2s;
+    }
+
+    .plan-btn-free { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+    .plan-btn-free:hover { border-color: var(--purple-light); }
+    .plan-btn-paid { background: var(--purple); color: #fff; box-shadow: 0 0 20px rgba(124,58,237,0.3); }
+    .plan-btn-paid:hover { background: #6d28d9; }
+
+    /* FOOTER */
+    footer {
+      padding: 3rem 6%;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 1rem;
+    }
+
+    footer .logo { font-size: 1.1rem; }
+    footer p { color: var(--muted); font-size: 0.85rem; }
+    footer .footer-links { display: flex; gap: 1.5rem; }
+    footer .footer-links a { color: var(--muted); font-size: 0.85rem; transition: color 0.2s; }
+    footer .footer-links a:hover { color: var(--text); }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="logo">Provero</div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#states">Coverage</a>
+    <a href="#pricing">Pricing</a>
+    <a href="https://api.provero.dev/docs" target="_blank">Docs</a>
+  </div>
+  <a href="#pricing" class="btn btn-primary">Get Free API Key</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-badge"><span></span> Live API · 2M+ Records</div>
+  <h1>Verify Any US Business<br><span class="highlight">In Milliseconds</span></h1>
+  <p class="hero-sub">Instant access to verified business entity data — corporations, LLCs, and partnerships — via a single REST API.</p>
+  <div class="hero-ctas">
+    <a href="#pricing" class="btn btn-primary">→ Get Free API Key</a>
+    <a href="https://api.provero.dev/docs" target="_blank" class="btn btn-outline">View Docs</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">2M+</div><div class="stat-label">Business Records</div></div>
+    <div class="stat"><div class="stat-num">4</div><div class="stat-label">States Covered</div></div>
+    <div class="stat"><div class="stat-num">&lt;100ms</div><div class="stat-label">Avg Response Time</div></div>
+    <div class="stat"><div class="stat-num">99.9%</div><div class="stat-label">Uptime SLA</div></div>
+  </div>
+</section>
+
+<!-- CODE DEMO -->
+<section class="demo-section" id="demo">
+  <div style="text-align:center; margin-bottom:3rem;">
+    <div class="section-label">Simple by Design</div>
+    <h2 class="section-title">One Request. Real Data.</h2>
+    <p class="section-sub" style="margin:0 auto;">Search by business name and state — get back verified entity data in JSON.</p>
+  </div>
+  <div class="demo-grid">
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <div class="code-title">Request</div>
+      </div>
+      <pre><span class="token-muted"># Search for a business</span>
+<span class="token-purple">curl</span> <span class="token-yellow">"https://api.provero.dev/business/search</span>
+<span class="token-yellow">  ?name=Apple&state=DE"</span> \
+  <span class="token-blue">-H</span> <span class="token-green">"X-API-Key: pvr_your_key"</span></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dots"><span></span><span></span><span></span></div>
+        <div class="code-title">Response</div>
+      </div>
+      <pre><span class="token-muted">{</span>
+  <span class="token-blue">"results"</span>: [<span class="token-muted">{</span>
+    <span class="token-blue">"name"</span>: <span class="token-green">"APPLE INC."</span>,
+    <span class="token-blue">"entity_type"</span>: <span class="token-green">"Corporation"</span>,
+    <span class="token-blue">"status"</span>: <span class="token-green">"Active"</span>,
+    <span class="token-blue">"state"</span>: <span class="token-green">"DE"</span>,
+    <span class="token-blue">"entity_number"</span>: <span class="token-green">"2117019"</span>,
+    <span class="token-blue">"registered_agent"</span>: <span class="token-green">"CT Corp"</span>,
+    <span class="token-blue">"incorporation_date"</span>: <span class="token-green">"1987-01-03"</span>
+  <span class="token-muted">}]</span>,
+  <span class="token-blue">"total"</span>: <span class="token-yellow">1</span>
+<span class="token-muted">}</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section" id="features">
+  <div class="section-label">Why Provero</div>
+  <h2 class="section-title">Built for Developers</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Lightning Fast</h3>
+      <p>All data is pre-loaded and indexed. No scraping on demand — responses in under 100ms directly from our database.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔐</div>
+      <h3>Simple Auth</h3>
+      <p>API key authentication with a single header. Get your key in 30 seconds — no OAuth, no complex setup.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔄</div>
+      <h3>Always Fresh</h3>
+      <p>Data is refreshed nightly from official state Secretary of State sources. Never stale, always accurate.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📦</div>
+      <h3>Clean JSON</h3>
+      <p>Consistent, normalized JSON across all states. No format differences to handle — same structure every time.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏛️</div>
+      <h3>Official Sources</h3>
+      <p>Data sourced directly from state Secretary of State databases. Not third-party aggregators — the primary source.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📈</div>
+      <h3>Growing Coverage</h3>
+      <p>Currently covering 4 states with more added regularly. Delaware and New York alone cover most major US corporations.</p>
+    </div>
+  </div>
+</section>
+
+<!-- STATES -->
+<section class="states-section" id="states">
+  <div class="section-label">Coverage</div>
+  <h2 class="section-title">States Available Now</h2>
+  <p style="color:var(--muted); margin-top:0.5rem;">More states added regularly — <a href="mailto:hello@provero.dev" style="color:var(--purple-light);">request a state</a></p>
+  <div class="states-grid">
+    <div class="state-badge"><div class="dot"></div> Delaware</div>
+    <div class="state-badge"><div class="dot"></div> New York</div>
+    <div class="state-badge"><div class="dot"></div> Texas</div>
+    <div class="state-badge"><div class="dot"></div> Wyoming</div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="pricing">
+  <div class="section-label">Pricing</div>
+  <h2 class="section-title">Start Free. Scale as You Grow.</h2>
+  <p style="color:var(--muted); margin-top:0.5rem;">No credit card required to get started.</p>
+  <div class="pricing-grid">
+    <div class="pricing-card">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">$0<span>/mo</span></div>
+      <div class="plan-desc">Perfect for testing and small projects</div>
+      <ul class="plan-features">
+        <li>100 requests / month</li>
+        <li>All 4 states</li>
+        <li>JSON API access</li>
+        <li>Email support</li>
+      </ul>
+      <a href="https://api.provero.dev/billing/subscribe" class="plan-btn plan-btn-free" style="display:block;text-align:center;">Get Free Key</a>
+    </div>
+    <div class="pricing-card featured">
+      <div class="featured-badge">Most Popular</div>
+      <div class="plan-name">Starter</div>
+      <div class="plan-price">$29<span>/mo</span></div>
+      <div class="plan-desc">For startups and growing applications</div>
+      <ul class="plan-features">
+        <li>10,000 requests / month</li>
+        <li>All 4 states</li>
+        <li>JSON API access</li>
+        <li>Priority email support</li>
+      </ul>
+      <a href="https://api.provero.dev/billing/subscribe" class="plan-btn plan-btn-paid" style="display:block;text-align:center;">Get Started</a>
+    </div>
+    <div class="pricing-card">
+      <div class="plan-name">Pro</div>
+      <div class="plan-price">$99<span>/mo</span></div>
+      <div class="plan-desc">For high-volume production workloads</div>
+      <ul class="plan-features">
+        <li>Unlimited requests</li>
+        <li>All 4 states</li>
+        <li>JSON API access</li>
+        <li>Dedicated support</li>
+      </ul>
+      <a href="https://api.provero.dev/billing/subscribe" class="plan-btn plan-btn-paid" style="display:block;text-align:center;">Go Pro</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="logo">Provero</div>
+  <p>© 2026 Cabaana Inc. All rights reserved.</p>
+  <div class="footer-links">
+    <a href="https://api.provero.dev/docs" target="_blank">API Docs</a>
+    <a href="mailto:hello@provero.dev">Contact</a>
+  </div>
+</footer>
+
+</body>
+</html>
