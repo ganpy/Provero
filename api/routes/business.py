@@ -39,10 +39,10 @@ def search_business(
     )
 
     return BusinessSearchResponse(
-        query=name,
-        state=state,
         results=[BusinessResponse.model_validate(r) for r in results],
-        count=len(results),
+        total=len(results),
+        state=state,
+        cached=True,
     )
 
 @router.get("/lookup/{entity_number}", response_model=BusinessResponse)
