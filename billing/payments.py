@@ -76,22 +76,50 @@ PLANS: dict[str, dict] = {
         "display_name": "Provero Free",
         "description": "100 API calls / month — no credit card required",
         "calls_per_month": 100,
-        "amount_cents": 0,          # $0 — no Stripe checkout needed
-        "stripe_price_id": None,    # never used; free tier bypasses Stripe
+        "amount_cents": 0,
+        "stripe_price_id": None,
     },
     "starter": {
         "display_name": "Provero Starter",
-        "description": "10,000 API calls / month at $99 / month",
+        "description": "10,000 API calls / month at $29 / month",
         "calls_per_month": 10_000,
-        "amount_cents": 9_900,      # $99.00
+        "amount_cents": 2_900,
         "stripe_price_id": os.getenv("STRIPE_STARTER_PRICE_ID"),
     },
     "pro": {
         "display_name": "Provero Pro",
-        "description": "100,000 API calls / month at $299 / month",
+        "description": "100,000 API calls / month at $99 / month",
         "calls_per_month": 100_000,
-        "amount_cents": 29_900,     # $299.00
+        "amount_cents": 9_900,
         "stripe_price_id": os.getenv("STRIPE_PRO_PRICE_ID"),
+    },
+    "license_starter": {
+        "display_name": "Provero License Starter",
+        "description": "10,000 API calls / month at $29 / month",
+        "calls_per_month": 10_000,
+        "amount_cents": 2_900,
+        "stripe_price_id": os.getenv("STRIPE_LICENSE_STARTER_PRICE_ID"),
+    },
+    "license_pro": {
+        "display_name": "Provero License Pro",
+        "description": "100,000 API calls / month at $99 / month",
+        "calls_per_month": 100_000,
+        "amount_cents": 9_900,
+        "stripe_price_id": os.getenv("STRIPE_LICENSE_PRO_PRICE_ID"),
+    },
+    "bundle_starter": {
+        "display_name": "Provero Bundle Starter",
+        "description": "10,000 API calls / month at $39 / month",
+        "calls_per_month": 10_000,
+        "amount_cents": 3_900,
+        "stripe_price_id": os.getenv("STRIPE_BUNDLE_STARTER_PRICE_ID"),
+    },
+    "bundle_pro": {
+        "display_name": "Provero Bundle Pro",
+        "description": "100,000 API calls / month at $129 / month",
+        "calls_per_month": 100_000,
+        "amount_cents": 12_900,
+        "stripe_price_id": os.getenv("STRIPE_BUNDLE_PRO_PRICE_ID"),
     },
 }
 
