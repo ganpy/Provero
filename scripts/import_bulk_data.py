@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from api.database import SessionLocal
 from api.models.business import Business
+from api.models.license import License
 
 # ---------------------------------------------------------------------------
 # Bulk data source URLs
@@ -33,6 +34,21 @@ SOURCES = {
     "NY": {
         "url": "https://data.ny.gov/api/views/n9v6-gdp6/rows.csv?accessType=DOWNLOAD",
         "description": "New York Active Businesses (data.ny.gov)",
+        "format": "csv",
+    },
+    "TX_LICENSE": {
+        "url": "https://data.texas.gov/api/views/7358-krk7/rows.csv?accessType=DOWNLOAD",
+        "description": "Texas TDLR All Licenses",
+        "format": "csv",
+    },
+    "CT_LICENSE": {
+        "url": "https://data.ct.gov/api/views/fxib-2xng/rows.csv?accessType=DOWNLOAD",
+        "description": "Connecticut State Licenses and Credentials",
+        "format": "csv",
+    },
+    "OR_LICENSE": {
+        "url": "https://data.oregon.gov/api/views/vhbr-cuaq/rows.csv?accessType=DOWNLOAD",
+        "description": "Oregon Contractor and Trade Licenses",
         "format": "csv",
     },
     "FL": {
@@ -137,6 +153,68 @@ PARSERS = {
     "NY": _parse_ny_row,
     "FL": _parse_fl_row,
     "CA": _parse_ca_row,
+}
+
+
+def _parse_ct_license_row(row: dict) -> Optional[dict]:
+    full_name = (row.get("Name") or "").strip()
+    license_number = (row.get("CredentialNumber") or "").strip()
+    if not license_number:
+        return None
+    if not full_name and not license_number:
+        return None
+    return {
+        "full_name": full_name or license_number,
+        "license_type": (row.get("Credential") or "").strip(),
+        "license_number": license_number or None,
+        "state": "CT",
+        "status": (row.get("Status") or "").strip().capitalize(),
+        "issued_date": _parse_date(row.get("IssueDate") or ""),
+        "expiry_date": _parse_date(row.get("ExpirationDate") or ""),
+        "source_url": "https://data.ct.gov/Business/State-Licenses-and-Credentials/fxib-2xng",
+    }
+
+
+def _parse_tx_license_row(row: dict) -> Optional[dict]:
+    full_name = (row.get("OWNER NAME") or row.get("BUSINESS NAME") or "").strip()
+    license_number = (row.get("LICENSE NUMBER") or "").strip()
+    if not full_name and not license_number:
+        return None
+    expiry = _parse_date(row.get("LICENSE EXPIRATION DATE (MMDDCCYY)") or "")
+    today = date.today()
+    status = "Expired" if expiry and expiry < today else "Active"
+    return {
+        "full_name": full_name or license_number,
+        "license_type": (row.get("LICENSE TYPE") or "").strip(),
+        "license_number": license_number or None,
+        "state": "TX",
+        "status": status,
+        "issued_date": None,
+        "expiry_date": expiry,
+        "source_url": "https://www.tdlr.texas.gov/",
+    }
+
+def _parse_or_license_row(row: dict) -> Optional[dict]:
+    full_name = (row.get("Full_Name") or row.get("DBA") or "").strip()
+    license_number = (row.get("LicNbr") or "").strip()
+    if not full_name and not license_number:
+        return None
+    return {
+        "full_name": full_name or license_number,
+        "license_type": (row.get("Profession") or "").strip(),
+        "license_number": license_number or None,
+        "state": "OR",
+        "status": (row.get("Lic_Status") or "").strip(),
+        "issued_date": None,
+        "expiry_date": _parse_date(row.get("Expiration_Date") or ""),
+        "source_url": "https://www.oregon.gov/bcd/licensing",
+    }
+
+
+LICENSE_PARSERS = {
+    "TX_LICENSE": _parse_tx_license_row,
+    "CT_LICENSE": _parse_ct_license_row,
+    "OR_LICENSE": _parse_or_license_row,
 }
 
 # ---------------------------------------------------------------------------
@@ -260,14 +338,92 @@ def _upsert_batch(batch: list[dict], db: Session):
     db.commit()
 
 
+def _upsert_license_batch(batch: list[dict], db: Session):
+    for rec in batch:
+        existing = (
+            db.query(License)
+            .filter(
+                License.license_number == rec["license_number"],
+                License.state == rec["state"],
+            )
+            .first()
+        ) if rec["license_number"] else None
+
+        if existing:
+            existing.full_name = rec["full_name"] or existing.full_name
+            existing.license_type = rec["license_type"] or existing.license_type
+            existing.status = rec["status"] or existing.status
+            existing.issued_date = rec["issued_date"] or existing.issued_date
+            existing.expiry_date = rec["expiry_date"] or existing.expiry_date
+            existing.last_updated = datetime.utcnow()
+        else:
+            db.add(License(
+                full_name=rec["full_name"],
+                license_type=rec["license_type"] or "",
+                license_number=rec["license_number"],
+                state=rec["state"],
+                status=rec["status"] or "",
+                issued_date=rec["issued_date"],
+                expiry_date=rec["expiry_date"],
+                last_updated=datetime.utcnow(),
+                source_url=rec["source_url"],
+            ))
+    db.commit()
+
+
+def import_license_csv(file_path: Path, state: str, db: Session, limit: int = 0) -> int:
+    parser = LICENSE_PARSERS[state]
+    count = 0
+    skipped = 0
+    batch = []
+    BATCH_SIZE = 500
+
+    print(f"[{state}] Reading {file_path} ...")
+
+    with open(file_path, "r", encoding="utf-8-sig", errors="replace") as f:
+        sample = f.read(4096)
+        f.seek(0)
+        delimiter = "\t" if sample.count("\t") > sample.count(",") else ","
+
+        reader = csv.DictReader(f, delimiter=delimiter)
+
+        for i, row in enumerate(reader):
+            if limit and i >= limit:
+                break
+
+            parsed = parser(row)
+            if not parsed:
+                skipped += 1
+                continue
+
+            batch.append(parsed)
+
+            if len(batch) >= BATCH_SIZE:
+                _upsert_license_batch(batch, db)
+                count += len(batch)
+                batch = []
+                print(f"[{state}] Imported {count:,} records so far ...", end="\r")
+
+        if batch:
+            _upsert_license_batch(batch, db)
+            count += len(batch)
+
+    print(f"\n[{state}] Done. Imported {count:,} records. Skipped {skipped:,} empty rows.")
+    return count
+
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
 def main():
-    parser = argparse.ArgumentParser(description="Import bulk SOS business data")
-    parser.add_argument("--state", required=True, choices=["NY", "FL", "CA"],
-                        help="State to import")
+    parser = argparse.ArgumentParser(description="Import bulk SOS business / license data")
+    parser.add_argument("--state", required=True,
+                        choices=["NY", "FL", "CA", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE"],
+                        help="State / dataset to import")
+    parser.add_argument("--type", dest="import_type", default="business",
+                        choices=["business", "license"],
+                        help="Record type to import (default: business)")
     parser.add_argument("--file", help="Path to local CSV file (skip download)")
     parser.add_argument("--limit", type=int, default=0,
                         help="Max rows to import (0 = all, use 1000 for testing)")
@@ -290,8 +446,12 @@ def main():
 
     db = SessionLocal()
     try:
-        total = import_csv(file_path, state, db, limit=args.limit)
-        print(f"\n✅ Successfully imported {total:,} {state} business records.")
+        if args.import_type == "license":
+            total = import_license_csv(file_path, state, db, limit=args.limit)
+            print(f"\n✅ Successfully imported {total:,} {state} license records.")
+        else:
+            total = import_csv(file_path, state, db, limit=args.limit)
+            print(f"\n✅ Successfully imported {total:,} {state} business records.")
     finally:
         db.close()
 

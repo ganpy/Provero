@@ -12,6 +12,7 @@ from api.auth import (
 from api.database import Base, engine, get_db
 from api.routes.billing import router as billing_router
 from api.routes.business import router as business_router
+from api.routes.license import router as license_router
 
 app = FastAPI(
     title="Provero API",
@@ -30,6 +31,7 @@ app.add_middleware(
 
 app.include_router(billing_router, prefix="/billing")
 app.include_router(business_router, prefix="/business")
+app.include_router(license_router, prefix="/license")
 
 
 @app.on_event("startup")
