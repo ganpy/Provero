@@ -339,35 +339,21 @@ def _upsert_batch(batch: list[dict], db: Session):
 
 
 def _upsert_license_batch(batch: list[dict], db: Session):
-    for rec in batch:
-        existing = (
-            db.query(License)
-            .filter(
-                License.license_number == rec["license_number"],
-                License.state == rec["state"],
-            )
-            .first()
-        ) if rec["license_number"] else None
-
-        if existing:
-            existing.full_name = rec["full_name"] or existing.full_name
-            existing.license_type = rec["license_type"] or existing.license_type
-            existing.status = rec["status"] or existing.status
-            existing.issued_date = rec["issued_date"] or existing.issued_date
-            existing.expiry_date = rec["expiry_date"] or existing.expiry_date
-            existing.last_updated = datetime.utcnow()
-        else:
-            db.add(License(
-                full_name=rec["full_name"],
-                license_type=rec["license_type"] or "",
-                license_number=rec["license_number"],
-                state=rec["state"],
-                status=rec["status"] or "",
-                issued_date=rec["issued_date"],
-                expiry_date=rec["expiry_date"],
-                last_updated=datetime.utcnow(),
-                source_url=rec["source_url"],
-            ))
+    now = datetime.utcnow()
+    db.bulk_save_objects([
+        License(
+            full_name=rec["full_name"],
+            license_type=rec["license_type"] or "",
+            license_number=rec["license_number"],
+            state=rec["state"],
+            status=rec["status"] or "",
+            issued_date=rec["issued_date"],
+            expiry_date=rec["expiry_date"],
+            last_updated=now,
+            source_url=rec["source_url"],
+        )
+        for rec in batch
+    ])
     db.commit()
 
 
