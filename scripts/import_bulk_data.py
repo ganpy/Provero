@@ -51,6 +51,11 @@ SOURCES = {
         "description": "Oregon Contractor and Trade Licenses",
         "format": "csv",
     },
+    "WA_LICENSE": {
+        "url": "https://data.wa.gov/api/views/m8qx-ubtq/rows.csv?accessType=DOWNLOAD",
+        "description": "Washington State L&I Contractor Licenses",
+        "format": "csv",
+    },
     "FL": {
         "url": "https://dos.fl.gov/sunbiz/corporations-tools-and-resources/bulk-data-downloads/",
         "description": "Florida Sunbiz bulk data (manual download required)",
@@ -211,10 +216,28 @@ def _parse_or_license_row(row: dict) -> Optional[dict]:
     }
 
 
+def _parse_wa_license_row(row: dict) -> Optional[dict]:
+    full_name = (row.get("PrimaryPrincipalName") or row.get("BusinessName") or "").strip()
+    license_number = (row.get("ContractorLicenseNumber") or "").strip()
+    if not full_name and not license_number:
+        return None
+    return {
+        "full_name": full_name or license_number,
+        "license_type": (row.get("ContractorLicenseTypeCodeDesc") or "").strip(),
+        "license_number": license_number or None,
+        "state": "WA",
+        "status": (row.get("ContractorLicenseStatus") or "").strip().capitalize(),
+        "issued_date": _parse_date(row.get("LicenseEffectiveDate") or ""),
+        "expiry_date": _parse_date(row.get("LicenseExpirationDate") or ""),
+        "source_url": "https://data.wa.gov/Labor/L-I-Contractor-License-Data-General/m8qx-ubtq",
+    }
+
+
 LICENSE_PARSERS = {
     "TX_LICENSE": _parse_tx_license_row,
     "CT_LICENSE": _parse_ct_license_row,
     "OR_LICENSE": _parse_or_license_row,
+    "WA_LICENSE": _parse_wa_license_row,
 }
 
 # ---------------------------------------------------------------------------
@@ -405,7 +428,7 @@ def import_license_csv(file_path: Path, state: str, db: Session, limit: int = 0)
 def main():
     parser = argparse.ArgumentParser(description="Import bulk SOS business / license data")
     parser.add_argument("--state", required=True,
-                        choices=["NY", "FL", "CA", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE"],
+                        choices=["NY", "FL", "CA", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE", "WA_LICENSE"],
                         help="State / dataset to import")
     parser.add_argument("--type", dest="import_type", default="business",
                         choices=["business", "license"],
