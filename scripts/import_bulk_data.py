@@ -66,6 +66,21 @@ SOURCES = {
         "description": "California SOS bulk data (manual download required)",
         "format": "manual",
     },
+    "CO": {
+        "url": "https://data.colorado.gov/api/views/4ykn-tg5h/rows.csv?accessType=DOWNLOAD",
+        "description": "Colorado Business Entities",
+        "format": "csv",
+    },
+    "IA": {
+        "url": "https://data.iowa.gov/resource/ez5t-3qay.csv?$limit=500000",
+        "description": "Iowa Active Business Entities (data.iowa.gov)",
+        "format": "csv",
+    },
+    "OR": {
+        "url": "https://data.oregon.gov/api/views/tckn-sxa6/rows.csv?accessType=DOWNLOAD",
+        "description": "Oregon Active Business Registrations (data.oregon.gov)",
+        "format": "csv",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -154,10 +169,65 @@ def _parse_ca_row(row: dict) -> Optional[dict]:
     }
 
 
+def _parse_co_row(row: dict) -> Optional[dict]:
+    name = (row.get("entityname") or "").strip()
+    if not name:
+        return None
+    agent_first = (row.get("agentfirstname") or "").strip()
+    agent_last = (row.get("agentlastname") or "").strip()
+    agent_org = (row.get("agentorganizationname") or "").strip()
+    registered_agent = (f"{agent_first} {agent_last}".strip() or agent_org) or None
+    return {
+        "name": name,
+        "entity_type": (row.get("entitytype") or "").strip(),
+        "status": (row.get("entitystatus") or "").strip(),
+        "state": "CO",
+        "entity_number": (row.get("entityid") or "").strip() or None,
+        "registered_agent": registered_agent,
+        "incorporation_date": _parse_date(row.get("entityformdate") or ""),
+        "source_url": "https://data.colorado.gov/Business/Business-Entities-in-Colorado/4ykn-tg5h",
+    }
+
+
+def _parse_ia_row(row: dict) -> Optional[dict]:
+    name = row.get("legal_name", "").strip()
+    if not name:
+        return None
+    return {
+        "name": name,
+        "entity_number": row.get("corp_number", "").strip(),
+        "entity_type": row.get("corporation_type", "").strip(),
+        "status": "Active",
+        "state": "IA",
+        "incorporation_date": _parse_date(row.get("effective_date", "")),
+        "registered_agent": row.get("registered_agent", "").strip() or None,
+        "source_url": f"https://data.iowa.gov/resource/ez5t-3qay/{row.get('corp_number', '')}",
+    }
+
+
+def _parse_or_row(row: dict) -> Optional[dict]:
+    name = row.get("Business Name", "").strip()
+    if not name:
+        return None
+    return {
+        "name": name,
+        "entity_number": row.get("Registry Number", "").strip(),
+        "entity_type": row.get("Entity Type", "").strip(),
+        "status": "Active",
+        "state": "OR",
+        "incorporation_date": _parse_date(row.get("Registry Date", "")),
+        "registered_agent": None,
+        "source_url": row.get("Business Details", "").strip() or None,
+    }
+
+
 PARSERS = {
     "NY": _parse_ny_row,
     "FL": _parse_fl_row,
     "CA": _parse_ca_row,
+    "CO": _parse_co_row,
+    "IA": _parse_ia_row,
+    "OR": _parse_or_row,
 }
 
 
@@ -428,7 +498,7 @@ def import_license_csv(file_path: Path, state: str, db: Session, limit: int = 0)
 def main():
     parser = argparse.ArgumentParser(description="Import bulk SOS business / license data")
     parser.add_argument("--state", required=True,
-                        choices=["NY", "FL", "CA", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE", "WA_LICENSE"],
+                        choices=["NY", "FL", "CA", "CO", "IA", "OR", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE", "WA_LICENSE"],
                         help="State / dataset to import")
     parser.add_argument("--type", dest="import_type", default="business",
                         choices=["business", "license"],
