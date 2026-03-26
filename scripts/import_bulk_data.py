@@ -372,8 +372,10 @@ def download_file(url: str, state: str) -> Path:
 # Import
 # ---------------------------------------------------------------------------
 
-def import_csv(file_path: Path, state: str, db: Session, limit: int = 0) -> int:
+def import_csv(file_path: Path, state: str, db: Session, limit: int = 0, insert_fn=None) -> int:
     parser = PARSERS[state]
+    if insert_fn is None:
+        insert_fn = _upsert_batch
     count = 0
     skipped = 0
     batch = []
@@ -401,13 +403,13 @@ def import_csv(file_path: Path, state: str, db: Session, limit: int = 0) -> int:
             batch.append(parsed)
 
             if len(batch) >= BATCH_SIZE:
-                _upsert_batch(batch, db)
+                insert_fn(batch, db)
                 count += len(batch)
                 batch = []
                 print(f"[{state}] Imported {count:,} records so far ...", end="\r")
 
         if batch:
-            _upsert_batch(batch, db)
+            insert_fn(batch, db)
             count += len(batch)
 
     print(f"\n[{state}] Done. Imported {count:,} records. Skipped {skipped:,} empty rows.")
@@ -450,6 +452,24 @@ def _upsert_batch(batch: list[dict], db: Session):
                 last_updated=datetime.utcnow(),
                 source_url=rec["source_url"],
             ))
+    db.commit()
+
+
+def _bulk_insert_batch(batch: list[dict], db: Session):
+    db.bulk_save_objects([
+        Business(
+            name=rec['name'],
+            entity_type=rec['entity_type'] or '',
+            status=rec['status'] or '',
+            state=rec['state'],
+            entity_number=rec['entity_number'],
+            registered_agent=rec['registered_agent'],
+            incorporation_date=rec['incorporation_date'],
+            last_updated=datetime.utcnow(),
+            source_url=rec['source_url'],
+        )
+        for rec in batch
+    ])
     db.commit()
 
 
@@ -551,7 +571,9 @@ def main():
             total = import_license_csv(file_path, state, db, limit=args.limit)
             print(f"\n✅ Successfully imported {total:,} {state} license records.")
         else:
-            total = import_csv(file_path, state, db, limit=args.limit)
+            bulk_states = {"NY", "CO", "IA", "OR", "CT"}
+            insert_fn = _bulk_insert_batch if state in bulk_states else _upsert_batch
+            total = import_csv(file_path, state, db, limit=args.limit, insert_fn=insert_fn)
             print(f"\n✅ Successfully imported {total:,} {state} business records.")
     finally:
         db.close()
