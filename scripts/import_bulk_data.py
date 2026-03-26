@@ -81,6 +81,11 @@ SOURCES = {
         "description": "Oregon Active Business Registrations (data.oregon.gov)",
         "format": "csv",
     },
+    "CT": {
+        "url": "https://data.ct.gov/resource/n7gp-d28j.csv?$limit=500000&$where=status='Active'",
+        "description": "Connecticut Business Registry - Active (data.ct.gov)",
+        "format": "csv",
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -221,6 +226,22 @@ def _parse_or_row(row: dict) -> Optional[dict]:
     }
 
 
+def _parse_ct_row(row: dict) -> Optional[dict]:
+    name = row.get("name", "").strip()
+    if not name:
+        return None
+    return {
+        "name": name,
+        "entity_number": row.get("accountnumber", "").strip(),
+        "entity_type": row.get("business_type", "").strip(),
+        "status": row.get("status", "").strip(),
+        "state": "CT",
+        "incorporation_date": _parse_date(row.get("date_registration", "")),
+        "registered_agent": None,
+        "source_url": "https://data.ct.gov/resource/n7gp-d28j",
+    }
+
+
 PARSERS = {
     "NY": _parse_ny_row,
     "FL": _parse_fl_row,
@@ -228,6 +249,7 @@ PARSERS = {
     "CO": _parse_co_row,
     "IA": _parse_ia_row,
     "OR": _parse_or_row,
+    "CT": _parse_ct_row,
 }
 
 
@@ -498,7 +520,7 @@ def import_license_csv(file_path: Path, state: str, db: Session, limit: int = 0)
 def main():
     parser = argparse.ArgumentParser(description="Import bulk SOS business / license data")
     parser.add_argument("--state", required=True,
-                        choices=["NY", "FL", "CA", "CO", "IA", "OR", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE", "WA_LICENSE"],
+                        choices=["NY", "FL", "CA", "CO", "IA", "OR", "CT", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE", "WA_LICENSE"],
                         help="State / dataset to import")
     parser.add_argument("--type", dest="import_type", default="business",
                         choices=["business", "license"],
