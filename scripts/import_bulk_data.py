@@ -56,6 +56,11 @@ SOURCES = {
         "description": "Washington State L&I Contractor Licenses",
         "format": "csv",
     },
+    "CO_LICENSE": {
+        "url": "https://data.colorado.gov/resource/7s5z-vewr.csv?$limit=2000000",
+        "description": "Colorado Professional and Occupational Licenses (data.colorado.gov)",
+        "format": "csv",
+    },
     "FL": {
         "url": "https://dos.fl.gov/sunbiz/corporations-tools-and-resources/bulk-data-downloads/",
         "description": "Florida Sunbiz bulk data (manual download required)",
@@ -325,11 +330,33 @@ def _parse_wa_license_row(row: dict) -> Optional[dict]:
     }
 
 
+def _parse_co_license_row(row: dict) -> Optional[dict]:
+    full_name = ' '.join(filter(None, [
+        row.get('firstname', '').strip(),
+        row.get('middlename', '').strip(),
+        row.get('lastname', '').strip(),
+        row.get('suffix', '').strip(),
+    ])) or row.get('entityname', '').strip()
+    if not full_name:
+        return None
+    return {
+        'full_name': full_name,
+        'license_type': row.get('licensetype', '').strip(),
+        'license_number': row.get('licensenumber', '').strip(),
+        'state': 'CO',
+        'status': row.get('licensestatusdescription', '').strip(),
+        'issued_date': _parse_date(row.get('licensefirstissuedate', '')),
+        'expiry_date': _parse_date(row.get('licenseexpirationdate', '')),
+        'source_url': row.get('linktoverifylicense', '').strip() or 'https://data.colorado.gov/resource/7s5z-vewr',
+    }
+
+
 LICENSE_PARSERS = {
     "TX_LICENSE": _parse_tx_license_row,
     "CT_LICENSE": _parse_ct_license_row,
     "OR_LICENSE": _parse_or_license_row,
     "WA_LICENSE": _parse_wa_license_row,
+    "CO_LICENSE": _parse_co_license_row,
 }
 
 # ---------------------------------------------------------------------------
@@ -540,7 +567,7 @@ def import_license_csv(file_path: Path, state: str, db: Session, limit: int = 0)
 def main():
     parser = argparse.ArgumentParser(description="Import bulk SOS business / license data")
     parser.add_argument("--state", required=True,
-                        choices=["NY", "FL", "CA", "CO", "IA", "OR", "CT", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE", "WA_LICENSE"],
+                        choices=["NY", "FL", "CA", "CO", "IA", "OR", "CT", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE", "WA_LICENSE", "CO_LICENSE"],
                         help="State / dataset to import")
     parser.add_argument("--type", dest="import_type", default="business",
                         choices=["business", "license"],
