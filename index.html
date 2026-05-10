@@ -596,7 +596,7 @@
           <li>JSON API access</li>
           <li>Email support</li>
         </ul>
-        <a href="https://api.provero.dev/billing/subscribe" class="plan-btn plan-btn-free" style="display:block;text-align:center;">Get Free Key</a>
+        <button onclick="openSignup('free','Get Free Key')" class="plan-btn plan-btn-free" style="display:block;text-align:center;width:100%;cursor:pointer;">Get Free Key</button>
       </div>
       <div class="pricing-card featured">
         <div class="featured-badge">Most Popular</div>
@@ -609,7 +609,7 @@
           <li>JSON API access</li>
           <li>Priority email support</li>
         </ul>
-        <a href="https://api.provero.dev/billing/subscribe" class="plan-btn plan-btn-paid" style="display:block;text-align:center;">Get Started</a>
+        <button onclick="openSignup('starter','Get Started — $29/mo')" class="plan-btn plan-btn-paid" style="display:block;text-align:center;width:100%;cursor:pointer;">Get Started</button>
       </div>
       <div class="pricing-card">
         <div class="plan-name">Pro</div>
@@ -621,7 +621,7 @@
           <li>JSON API access</li>
           <li>Dedicated support</li>
         </ul>
-        <a href="https://api.provero.dev/billing/subscribe" class="plan-btn plan-btn-paid" style="display:block;text-align:center;">Go Pro</a>
+        <button onclick="openSignup('pro','Go Pro — $99/mo')" class="plan-btn plan-btn-paid" style="display:block;text-align:center;width:100%;cursor:pointer;">Go Pro</button>
       </div>
     </div>
   </div>
@@ -639,7 +639,7 @@
           <li>JSON API access</li>
           <li>Email support</li>
         </ul>
-        <a href="https://api.provero.dev/billing/subscribe" class="plan-btn plan-btn-free" style="display:block;text-align:center;">Get Free Key</a>
+        <button onclick="openSignup('free','Get Free Key')" class="plan-btn plan-btn-free" style="display:block;text-align:center;width:100%;cursor:pointer;">Get Free Key</button>
       </div>
       <div class="pricing-card featured">
         <div class="featured-badge">Most Popular</div>
@@ -652,7 +652,7 @@
           <li>JSON API access</li>
           <li>Priority email support</li>
         </ul>
-        <a href="https://api.provero.dev/billing/subscribe" class="plan-btn plan-btn-paid" style="display:block;text-align:center;">Get Started</a>
+        <button onclick="openSignup('starter','Get Started — $29/mo')" class="plan-btn plan-btn-paid" style="display:block;text-align:center;width:100%;cursor:pointer;">Get Started</button>
       </div>
       <div class="pricing-card">
         <div class="plan-name">Pro</div>
@@ -664,7 +664,7 @@
           <li>JSON API access</li>
           <li>Dedicated support</li>
         </ul>
-        <a href="https://api.provero.dev/billing/subscribe" class="plan-btn plan-btn-paid" style="display:block;text-align:center;">Go Pro</a>
+        <button onclick="openSignup('pro','Go Pro — $99/mo')" class="plan-btn plan-btn-paid" style="display:block;text-align:center;width:100%;cursor:pointer;">Go Pro</button>
       </div>
     </div>
   </div>
@@ -682,7 +682,7 @@
           <li>All 8 states</li>
           <li>Email support</li>
         </ul>
-        <a href="https://api.provero.dev/billing/subscribe" class="plan-btn plan-btn-free" style="display:block;text-align:center;">Get Free Key</a>
+        <button onclick="openSignup('free','Get Free Key')" class="plan-btn plan-btn-free" style="display:block;text-align:center;width:100%;cursor:pointer;">Get Free Key</button>
       </div>
       <div class="pricing-card featured">
         <div class="featured-badge">Best Value</div>
@@ -695,7 +695,7 @@
           <li>All 8 states</li>
           <li>Priority email support</li>
         </ul>
-        <a href="https://api.provero.dev/billing/subscribe" class="plan-btn plan-btn-paid" style="display:block;text-align:center;">Get Bundle</a>
+        <button onclick="openSignup('starter_bundle','Get Bundle — $39/mo')" class="plan-btn plan-btn-paid" style="display:block;text-align:center;width:100%;cursor:pointer;">Get Bundle</button>
       </div>
       <div class="pricing-card">
         <div class="plan-name">Pro Bundle</div>
@@ -707,7 +707,7 @@
           <li>All 8 states</li>
           <li>Dedicated support</li>
         </ul>
-        <a href="https://api.provero.dev/billing/subscribe" class="plan-btn plan-btn-paid" style="display:block;text-align:center;">Go Pro Bundle</a>
+        <button onclick="openSignup('pro_bundle','Go Pro Bundle — $129/mo')" class="plan-btn plan-btn-paid" style="display:block;text-align:center;width:100%;cursor:pointer;">Go Pro Bundle</button>
       </div>
     </div>
     <p class="pricing-note">Bundle includes both Business and License APIs under a single key. <a href="mailto:provero@cabaana.com">Contact us</a> for enterprise plans.</p>
@@ -738,6 +738,134 @@
     document.getElementById('pricing-' + tab).classList.add('active');
     btn.classList.add('active');
   }
+</script>
+
+<!-- SIGNUP MODAL -->
+<div id="signup-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);z-index:1000;align-items:center;justify-content:center;padding:20px;" onclick="closeSignupBackdrop(event)">
+  <div style="background:#1a1a2e;border-radius:12px;max-width:440px;width:100%;padding:32px;position:relative;color:#fff;box-shadow:0 20px 60px rgba(0,0,0,0.5);box-sizing:border-box;">
+    <button type="button" onclick="closeSignup()" aria-label="Close" style="position:absolute;top:10px;right:14px;background:transparent;border:none;color:#fff;font-size:26px;cursor:pointer;line-height:1;padding:4px 8px;">&times;</button>
+    <h3 id="signup-title" style="margin:0 0 8px 0;font-size:22px;">Sign up</h3>
+    <div id="signup-form-wrapper">
+      <p style="margin:0 0 16px 0;color:#a0a0c0;font-size:14px;">Enter your email to get started.</p>
+      <input id="signup-email" type="email" placeholder="you@example.com" autocomplete="email" style="width:100%;padding:12px;border-radius:8px;border:1px solid #333;background:#0f0f1e;color:#fff;font-size:15px;box-sizing:border-box;" />
+      <div id="signup-error" style="display:none;color:#ff6b6b;font-size:13px;margin-top:8px;"></div>
+      <button type="button" id="signup-submit" onclick="submitSignup()" style="width:100%;padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:15px;font-weight:600;cursor:pointer;margin-top:14px;">Get My Key</button>
+    </div>
+    <div id="signup-success" style="display:none;">
+      <p style="margin:0 0 12px 0;color:#a0a0c0;font-size:14px;">Your API key — save it now, it won't be shown again.</p>
+      <div id="signup-api-key" style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0f0f1e;border:1px solid #333;border-radius:8px;padding:12px;word-break:break-all;font-size:13px;margin-bottom:12px;"></div>
+      <button type="button" id="signup-copy" onclick="copySignupKey()" style="width:100%;padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:15px;font-weight:600;cursor:pointer;">Copy Key</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentSignupTier = null;
+
+  function openSignup(tier, title) {
+    currentSignupTier = tier;
+    document.getElementById('signup-title').textContent = title;
+    document.getElementById('signup-form-wrapper').style.display = 'block';
+    document.getElementById('signup-success').style.display = 'none';
+    document.getElementById('signup-error').style.display = 'none';
+    document.getElementById('signup-email').value = '';
+    const submitBtn = document.getElementById('signup-submit');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Get My Key';
+    document.getElementById('signup-modal').style.display = 'flex';
+    setTimeout(() => document.getElementById('signup-email').focus(), 50);
+  }
+
+  function closeSignup() {
+    document.getElementById('signup-modal').style.display = 'none';
+  }
+
+  function closeSignupBackdrop(e) {
+    if (e.target.id === 'signup-modal') closeSignup();
+  }
+
+  function showSignupError(msg) {
+    const el = document.getElementById('signup-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+  }
+
+  async function submitSignup() {
+    const email = document.getElementById('signup-email').value.trim();
+    document.getElementById('signup-error').style.display = 'none';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showSignupError('Please enter a valid email address.');
+      return;
+    }
+    const btn = document.getElementById('signup-submit');
+    btn.disabled = true;
+    btn.textContent = 'Processing…';
+    try {
+      const resp = await fetch('https://api.provero.dev/billing/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, tier: currentSignupTier })
+      });
+      let data = {};
+      try { data = await resp.json(); } catch (_) {}
+      if (!resp.ok) {
+        showSignupError(data.error || data.message || 'Something went wrong. Please try again.');
+        btn.disabled = false;
+        btn.textContent = 'Get My Key';
+        return;
+      }
+      if (data.checkout_url) {
+        window.location.href = data.checkout_url;
+        return;
+      }
+      if (data.api_key) {
+        document.getElementById('signup-api-key').textContent = data.api_key;
+        document.getElementById('signup-form-wrapper').style.display = 'none';
+        document.getElementById('signup-success').style.display = 'block';
+        return;
+      }
+      showSignupError('Unexpected response. Please contact support.');
+      btn.disabled = false;
+      btn.textContent = 'Get My Key';
+    } catch (err) {
+      showSignupError('Network error. Please try again.');
+      btn.disabled = false;
+      btn.textContent = 'Get My Key';
+    }
+  }
+
+  function copySignupKey() {
+    const key = document.getElementById('signup-api-key').textContent;
+    const btn = document.getElementById('signup-copy');
+    const done = () => {
+      const original = 'Copy Key';
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(key).then(done).catch(() => {
+        const ta = document.createElement('textarea');
+        ta.value = key;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); done(); } catch (_) {}
+        document.body.removeChild(ta);
+      });
+    }
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && document.getElementById('signup-modal').style.display === 'flex') {
+      closeSignup();
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && document.getElementById('signup-modal').style.display === 'flex' && document.activeElement && document.activeElement.id === 'signup-email') {
+      e.preventDefault();
+      submitSignup();
+    }
+  });
 </script>
 
 </body>
