@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payment Successful — Provero</title>
+  <meta name="description" content="Your Provero subscription is active. Here is your API key." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="provero_icon_512.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #080810;
+      --bg2: #0f0f1a;
+      --bg3: #14141f;
+      --border: rgba(124,58,237,0.2);
+      --purple: #7c3aed;
+      --purple-light: #a78bfa;
+      --text: #f1f0ff;
+      --muted: #8b8aa0;
+      --green: #10b981;
+      --red: #ef4444;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      max-width: 560px; width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 32px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .logo {
+      font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fff 0%, var(--purple-light) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 24px;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; border-radius: 999px;
+      background: rgba(16,185,129,0.15); color: var(--green);
+      font-size: 12px; font-weight: 600; margin-bottom: 16px;
+    }
+    .badge::before {
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--green);
+    }
+    h1 { font-size: 28px; font-weight: 700; margin-bottom: 8px; letter-spacing: -0.5px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 24px; }
+    .status-line { color: var(--muted); font-size: 14px; margin: 16px 0; }
+    .key-label {
+      color: var(--muted); font-size: 12px;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+    .key-box {
+      font-family: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+      font-size: 13px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      word-break: break-all;
+      margin-bottom: 12px;
+      color: var(--purple-light);
+    }
+    .warning {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      color: #fca5a5;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      padding: 12px 20px; border-radius: 10px;
+      font-weight: 600; font-size: 14px; cursor: pointer;
+      border: none; width: 100%;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--purple); color: #fff; }
+    .btn-primary:hover { background: #6d28d9; }
+    .btn-outline {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border); margin-top: 8px;
+    }
+    .btn-outline:hover { border-color: var(--purple-light); color: var(--purple-light); }
+    .error-box {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      color: #fca5a5;
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      margin: 12px 0;
+    }
+    a.plain { color: var(--purple-light); }
+    a.plain:hover { text-decoration: underline; }
+    .fallback-help {
+      color: var(--muted); font-size: 13px; margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Provero</div>
+
+    <div id="loading-state">
+      <div class="status-line">Confirming your payment with Stripe…</div>
+    </div>
+
+    <div id="success-state" hidden>
+      <div class="badge">Payment confirmed</div>
+      <h1>You&rsquo;re all set.</h1>
+      <p class="subtitle">
+        Your <span id="tier-label">Provero</span> subscription is active. Here is your API key:
+      </p>
+
+      <div class="key-label">API key</div>
+      <div id="api-key" class="key-box">&nbsp;</div>
+      <div class="warning">
+        <strong>Save this key now.</strong> We won&rsquo;t show it again. Treat it like a password.
+      </div>
+
+      <button id="copy-btn" class="btn btn-primary" onclick="copyKey()">Copy API Key</button>
+      <a href="/" class="btn btn-outline">Back to Provero</a>
+
+      <p class="fallback-help">
+        Lost it later? Email <a class="plain" href="mailto:provero@cabaana.com">provero@cabaana.com</a> and we&rsquo;ll help.
+      </p>
+    </div>
+
+    <div id="error-state" hidden>
+      <h1>Payment went through.</h1>
+      <p class="subtitle">
+        Stripe confirmed your payment, but we couldn&rsquo;t retrieve your API key automatically.
+      </p>
+      <div id="error-detail" class="error-box"></div>
+      <p class="fallback-help">
+        No need to worry &mdash; you haven&rsquo;t been double-charged. Email
+        <a class="plain" href="mailto:provero@cabaana.com">provero@cabaana.com</a>
+        with your payment email and we&rsquo;ll send your key right over.
+      </p>
+      <a href="/" class="btn btn-outline" style="margin-top:16px;">Back to Provero</a>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get('session_id');
+
+      function show(id) {
+        ['loading-state', 'success-state', 'error-state'].forEach(function (s) {
+          document.getElementById(s).hidden = (s !== id);
+        });
+      }
+
+      function showError(msg) {
+        document.getElementById('error-detail').textContent = msg;
+        show('error-state');
+      }
+
+      if (!sessionId) {
+        showError('No session_id in URL. If you just paid, your subscription is still active — email us for your key.');
+        return;
+      }
+
+      const API = 'https://api.provero.dev/billing/session-key?session_id=' + encodeURIComponent(sessionId);
+      let attempt = 0;
+      const maxAttempts = 6; // ~12s total: webhook race tolerance
+      const retryDelayMs = 2000;
+
+      function fetchKey() {
+        attempt += 1;
+        fetch(API)
+          .then(function (resp) {
+            return resp.json().then(function (data) {
+              return { status: resp.status, data: data };
+            });
+          })
+          .then(function (res) {
+            if (res.status === 200 && res.data.api_key) {
+              document.getElementById('api-key').textContent = res.data.api_key;
+              const tier = (res.data.tier || '').replace('_', ' ');
+              if (tier) {
+                document.getElementById('tier-label').textContent = tier.charAt(0).toUpperCase() + tier.slice(1);
+              }
+              show('success-state');
+              return;
+            }
+            if (res.status === 409 && attempt < maxAttempts) {
+              setTimeout(fetchKey, retryDelayMs);
+              return;
+            }
+            const detail = (res.data && res.data.detail) || ('HTTP ' + res.status);
+            showError(detail);
+          })
+          .catch(function () {
+            if (attempt < maxAttempts) {
+              setTimeout(fetchKey, retryDelayMs);
+              return;
+            }
+            showError('Could not reach the Provero API. Please check your connection and reload.');
+          });
+      }
+
+      fetchKey();
+    })();
+
+    function copyKey() {
+      const key = document.getElementById('api-key').textContent;
+      const btn = document.getElementById('copy-btn');
+      const done = function () {
+        btn.textContent = 'Copied!';
+        setTimeout(function () { btn.textContent = 'Copy API Key'; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(key).then(done).catch(function () {
+          const ta = document.createElement('textarea');
+          ta.value = key;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); done(); } catch (_) {}
+          document.body.removeChild(ta);
+        });
+      }
+    }
+  </script>
+</body>
+</html>

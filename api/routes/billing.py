@@ -61,6 +61,13 @@ class SubscribeResponse(BaseModel):
     message: str
 
 
+class SessionKeyResponse(BaseModel):
+    """Returned by GET /billing/session-key."""
+    tier: str
+    api_key: str
+    email: str
+
+
 class WebhookResponse(BaseModel):
     received: bool
     event_type: str
@@ -160,6 +167,81 @@ def subscribe(
             "Your API key will be issued after payment is confirmed."
         ),
     )
+
+
+@router.get(
+    "/session-key",
+    response_model=SessionKeyResponse,
+    summary="Retrieve the API key issued for a completed Stripe Checkout session",
+    status_code=status.HTTP_200_OK,
+)
+def session_key(
+    session_id: str,
+    db: Session = Depends(get_db),
+) -> SessionKeyResponse:
+    """
+    Look up the API key issued for a completed Stripe Checkout session.
+
+    Called by the post-payment success page: Stripe appends
+    `?session_id={CHECKOUT_SESSION_ID}` to the success URL, and the page
+    hits this endpoint to display the key to the paying customer.
+
+    Returns 404 if the session is unknown to Stripe, 402 if it exists but
+    payment did not complete, and 409 if payment is confirmed but the
+    webhook has not yet issued the key (caller should retry).
+    """
+    try:
+        session = stripe.checkout.Session.retrieve(session_id)
+    except stripe.error.InvalidRequestError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Unknown Stripe session: {exc.user_message or str(exc)}",
+        ) from exc
+    except stripe.StripeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Stripe error: {exc.user_message or str(exc)}",
+        ) from exc
+
+    if session.get("payment_status") != "paid":
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=(
+                f"Checkout session is not paid "
+                f"(status={session.get('status')}, "
+                f"payment_status={session.get('payment_status')})."
+            ),
+        )
+
+    metadata = session.get("metadata") or {}
+    email = metadata.get("email") or session.get("customer_email") or ""
+    tier = metadata.get("tier", "")
+
+    if not email or not tier:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Session is missing email or tier metadata.",
+        )
+
+    # Return the most recent key for this (email, tier) — the one the
+    # webhook just issued for this payment.
+    record = (
+        db.query(APIKey)
+        .filter(APIKey.owner_email == email, APIKey.tier == tier)
+        .order_by(APIKey.created_at.desc())
+        .first()
+    )
+
+    if record is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Payment confirmed but API key has not been issued yet. "
+                "The webhook may still be processing — please retry in a moment."
+            ),
+        )
+
+    return SessionKeyResponse(tier=record.tier, api_key=record.key, email=email)
 
 
 @router.post(

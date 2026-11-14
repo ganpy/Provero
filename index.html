@@ -695,7 +695,7 @@
           <li>All 8 states</li>
           <li>Priority email support</li>
         </ul>
-        <button onclick="openSignup('starter_bundle','Get Bundle — $39/mo')" class="plan-btn plan-btn-paid" style="display:block;text-align:center;width:100%;cursor:pointer;">Get Bundle</button>
+        <button onclick="openSignup('bundle_starter','Get Bundle — $39/mo')" class="plan-btn plan-btn-paid" style="display:block;text-align:center;width:100%;cursor:pointer;">Get Bundle</button>
       </div>
       <div class="pricing-card">
         <div class="plan-name">Pro Bundle</div>
@@ -707,7 +707,7 @@
           <li>All 8 states</li>
           <li>Dedicated support</li>
         </ul>
-        <button onclick="openSignup('pro_bundle','Go Pro Bundle — $129/mo')" class="plan-btn plan-btn-paid" style="display:block;text-align:center;width:100%;cursor:pointer;">Go Pro Bundle</button>
+        <button onclick="openSignup('bundle_pro','Go Pro Bundle — $129/mo')" class="plan-btn plan-btn-paid" style="display:block;text-align:center;width:100%;cursor:pointer;">Go Pro Bundle</button>
       </div>
     </div>
     <p class="pricing-note">Bundle includes both Business and License APIs under a single key. <a href="mailto:provero@cabaana.com">Contact us</a> for enterprise plans.</p>
@@ -809,7 +809,15 @@
       let data = {};
       try { data = await resp.json(); } catch (_) {}
       if (!resp.ok) {
-        showSignupError(data.error || data.message || 'Something went wrong. Please try again.');
+        let msg = data.error || data.message;
+        if (!msg && data.detail) {
+          if (typeof data.detail === 'string') {
+            msg = data.detail;
+          } else if (Array.isArray(data.detail) && data.detail.length) {
+            msg = data.detail.map(d => d && d.msg ? d.msg : JSON.stringify(d)).join('; ');
+          }
+        }
+        showSignupError(msg || ('Request failed (HTTP ' + resp.status + '). Please try again.'));
         btn.disabled = false;
         btn.textContent = 'Get My Key';
         return;
