@@ -71,6 +71,11 @@ SOURCES = {
         "description": "New York Appearance Enhancement and Barber Individual Licenses (data.ny.gov)",
         "format": "csv",
     },
+    "NY_LICENSE_LIQUOR": {
+        "url": "https://data.ny.gov/resource/9s3h-dpkz.csv?$limit=200000",
+        "description": "New York State Liquor Authority Active Licenses (data.ny.gov)",
+        "format": "csv",
+    },
     "FL": {
         "url": "https://dos.fl.gov/sunbiz/corporations-tools-and-resources/bulk-data-downloads/",
         "description": "Florida Sunbiz bulk data (manual download required)",
@@ -378,6 +383,34 @@ def _parse_ny_license_row(row: dict) -> Optional[dict]:
     }
 
 
+def _parse_ny_liquor_license_row(row: dict) -> Optional[dict]:
+    """data.ny.gov/resource/9s3h-dpkz columns: 'licensepermitid', 'type',
+    'class', 'description', 'legalname', 'dba', 'originalissuedate',
+    'effectivedate', 'expirationdate', ... Dataset covers NY State Liquor
+    Authority active licenses (bars, restaurants, grocery stores with
+    beer/wine, etc.). Dates come in ISO form '2026-11-05T00:00:00.000';
+    strip the T-suffix before _parse_date."""
+    full_name = (row.get("legalname") or row.get("dba") or "").strip()
+    license_number = (row.get("licensepermitid") or "").strip()
+    if not full_name and not license_number:
+        return None
+    def _dateonly(s):
+        return (s or "").split("T")[0]
+    expiry = _parse_date(_dateonly(row.get("expirationdate")))
+    today = date.today()
+    status = "Expired" if expiry and expiry < today else "Active"
+    return {
+        "full_name": full_name or license_number,
+        "license_type": (row.get("description") or row.get("class") or "").strip(),
+        "license_number": license_number or None,
+        "state": "NY",
+        "status": status,
+        "issued_date": _parse_date(_dateonly(row.get("originalissuedate") or row.get("effectivedate"))),
+        "expiry_date": expiry,
+        "source_url": "https://data.ny.gov/d/9s3h-dpkz",
+    }
+
+
 def _parse_co_license_row(row: dict) -> Optional[dict]:
     full_name = ' '.join(filter(None, [
         row.get('firstname', '').strip(),
@@ -406,6 +439,7 @@ LICENSE_PARSERS = {
     "WA_LICENSE": _parse_wa_license_row,
     "CO_LICENSE": _parse_co_license_row,
     "NY_LICENSE": _parse_ny_license_row,
+    "NY_LICENSE_LIQUOR": _parse_ny_liquor_license_row,
 }
 
 # ---------------------------------------------------------------------------
@@ -616,7 +650,7 @@ def import_license_csv(file_path: Path, state: str, db: Session, limit: int = 0)
 def main():
     parser = argparse.ArgumentParser(description="Import bulk SOS business / license data")
     parser.add_argument("--state", required=True,
-                        choices=["NY", "FL", "CA", "CO", "IA", "OR", "CT", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE", "WA_LICENSE", "CO_LICENSE", "NY_LICENSE"],
+                        choices=["NY", "FL", "CA", "CO", "IA", "OR", "CT", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE", "WA_LICENSE", "CO_LICENSE", "NY_LICENSE", "NY_LICENSE_LIQUOR"],
                         help="State / dataset to import")
     parser.add_argument("--type", dest="import_type", default="business",
                         choices=["business", "license"],
