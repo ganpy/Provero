@@ -31,34 +31,44 @@ from api.models.license import License
 # ---------------------------------------------------------------------------
 
 SOURCES = {
+    # All Socrata datasets use the /resource/{id}.csv endpoint. The older
+    # /api/views/{id}/rows.csv?accessType=DOWNLOAD endpoint is being sunset
+    # by Socrata on 2026-12-22 (Deprecation/Sunset headers already set by
+    # upstream). The /resource/ endpoint returns lowercase snake_case
+    # column names, which is what every parser below expects.
     "NY": {
-        "url": "https://data.ny.gov/api/views/n9v6-gdp6/rows.csv?accessType=DOWNLOAD",
+        "url": "https://data.ny.gov/resource/n9v6-gdp6.csv?$limit=5000000",
         "description": "New York Active Businesses (data.ny.gov)",
         "format": "csv",
     },
     "TX_LICENSE": {
-        "url": "https://data.texas.gov/api/views/7358-krk7/rows.csv?accessType=DOWNLOAD",
+        "url": "https://data.texas.gov/resource/7358-krk7.csv?$limit=2000000",
         "description": "Texas TDLR All Licenses",
         "format": "csv",
     },
     "CT_LICENSE": {
-        "url": "https://data.ct.gov/api/views/fxib-2xng/rows.csv?accessType=DOWNLOAD",
+        "url": "https://data.ct.gov/resource/fxib-2xng.csv?$limit=5000000",
         "description": "Connecticut State Licenses and Credentials",
         "format": "csv",
     },
     "OR_LICENSE": {
-        "url": "https://data.oregon.gov/api/views/vhbr-cuaq/rows.csv?accessType=DOWNLOAD",
+        "url": "https://data.oregon.gov/resource/vhbr-cuaq.csv?$limit=200000",
         "description": "Oregon Contractor and Trade Licenses",
         "format": "csv",
     },
     "WA_LICENSE": {
-        "url": "https://data.wa.gov/api/views/m8qx-ubtq/rows.csv?accessType=DOWNLOAD",
+        "url": "https://data.wa.gov/resource/m8qx-ubtq.csv?$limit=500000",
         "description": "Washington State L&I Contractor Licenses",
         "format": "csv",
     },
     "CO_LICENSE": {
         "url": "https://data.colorado.gov/resource/7s5z-vewr.csv?$limit=2000000",
         "description": "Colorado Professional and Occupational Licenses (data.colorado.gov)",
+        "format": "csv",
+    },
+    "NY_LICENSE": {
+        "url": "https://data.ny.gov/resource/ucu3-8265.csv?$limit=500000",
+        "description": "New York Appearance Enhancement and Barber Individual Licenses (data.ny.gov)",
         "format": "csv",
     },
     "FL": {
@@ -72,7 +82,7 @@ SOURCES = {
         "format": "manual",
     },
     "CO": {
-        "url": "https://data.colorado.gov/api/views/4ykn-tg5h/rows.csv?accessType=DOWNLOAD",
+        "url": "https://data.colorado.gov/resource/4ykn-tg5h.csv?$limit=5000000",
         "description": "Colorado Business Entities",
         "format": "csv",
     },
@@ -82,7 +92,7 @@ SOURCES = {
         "format": "csv",
     },
     "OR": {
-        "url": "https://data.oregon.gov/api/views/tckn-sxa6/rows.csv?accessType=DOWNLOAD",
+        "url": "https://data.oregon.gov/resource/tckn-sxa6.csv?$limit=5000000",
         "description": "Oregon Active Business Registrations (data.oregon.gov)",
         "format": "csv",
     },
@@ -115,22 +125,22 @@ def _parse_date(raw: str) -> Optional[date]:
 
 def _parse_ny_row(row: dict) -> Optional[dict]:
     """
-    New York Open Data actual columns:
-    'DOS ID', 'Current Entity Name', 'Initial DOS Filing Date',
-    'County', 'Jurisdiction', 'Entity Type', 'Registered Agent Name'
+    New York Open Data (data.ny.gov/resource/n9v6-gdp6) columns:
+    'dos_id', 'current_entity_name', 'initial_dos_filing_date', 'county',
+    'jurisdiction', 'entity_type', 'registered_agent_name', ...
     """
-    name = (row.get("Current Entity Name") or "").strip()
+    name = (row.get("current_entity_name") or "").strip()
     if not name:
         return None
 
     return {
         "name": name,
-        "entity_number": (row.get("DOS ID") or "").strip() or None,
-        "entity_type": (row.get("Entity Type") or "").strip(),
+        "entity_number": (row.get("dos_id") or "").strip() or None,
+        "entity_type": (row.get("entity_type") or "").strip(),
         "status": "Active",
         "state": "NY",
-        "incorporation_date": _parse_date(row.get("Initial DOS Filing Date", "")),
-        "registered_agent": (row.get("Registered Agent Name") or "").strip() or None,
+        "incorporation_date": _parse_date(row.get("initial_dos_filing_date", "")),
+        "registered_agent": (row.get("registered_agent_name") or "").strip() or None,
         "source_url": "https://data.ny.gov/Economic-Development/Active-Corporations-Beginning-1800/n9v6-gdp6",
     }
 
@@ -216,18 +226,20 @@ def _parse_ia_row(row: dict) -> Optional[dict]:
 
 
 def _parse_or_row(row: dict) -> Optional[dict]:
-    name = row.get("Business Name", "").strip()
+    """data.oregon.gov/resource/tckn-sxa6 columns: 'registry_number',
+    'business_name', 'entity_type', 'registry_date', 'business_details', ..."""
+    name = (row.get("business_name") or "").strip()
     if not name:
         return None
     return {
         "name": name,
-        "entity_number": row.get("Registry Number", "").strip(),
-        "entity_type": row.get("Entity Type", "").strip(),
+        "entity_number": (row.get("registry_number") or "").strip(),
+        "entity_type": (row.get("entity_type") or "").strip(),
         "status": "Active",
         "state": "OR",
-        "incorporation_date": _parse_date(row.get("Registry Date", "")),
+        "incorporation_date": _parse_date(row.get("registry_date") or ""),
         "registered_agent": None,
-        "source_url": row.get("Business Details", "").strip() or None,
+        "source_url": (row.get("business_details") or "").strip() or None,
     }
 
 
@@ -259,35 +271,40 @@ PARSERS = {
 
 
 def _parse_ct_license_row(row: dict) -> Optional[dict]:
-    full_name = (row.get("Name") or "").strip()
-    license_number = (row.get("CredentialNumber") or "").strip()
+    """data.ct.gov/resource/fxib-2xng columns: 'name', 'credentialnumber',
+    'credential', 'status', 'issuedate', 'expirationdate', ..."""
+    full_name = (row.get("name") or "").strip()
+    license_number = (row.get("credentialnumber") or "").strip()
     if not license_number:
         return None
     if not full_name and not license_number:
         return None
     return {
         "full_name": full_name or license_number,
-        "license_type": (row.get("Credential") or "").strip(),
+        "license_type": (row.get("credential") or "").strip(),
         "license_number": license_number or None,
         "state": "CT",
-        "status": (row.get("Status") or "").strip().capitalize(),
-        "issued_date": _parse_date(row.get("IssueDate") or ""),
-        "expiry_date": _parse_date(row.get("ExpirationDate") or ""),
+        "status": (row.get("status") or "").strip().capitalize(),
+        "issued_date": _parse_date(row.get("issuedate") or ""),
+        "expiry_date": _parse_date(row.get("expirationdate") or ""),
         "source_url": "https://data.ct.gov/Business/State-Licenses-and-Credentials/fxib-2xng",
     }
 
 
 def _parse_tx_license_row(row: dict) -> Optional[dict]:
-    full_name = (row.get("OWNER NAME") or row.get("BUSINESS NAME") or "").strip()
-    license_number = (row.get("LICENSE NUMBER") or "").strip()
+    """data.texas.gov/resource/7358-krk7 columns: 'license_type',
+    'license_number', 'business_name', 'owner_name',
+    'license_expiration_date_mmddccyy', ..."""
+    full_name = (row.get("owner_name") or row.get("business_name") or "").strip()
+    license_number = (row.get("license_number") or "").strip()
     if not full_name and not license_number:
         return None
-    expiry = _parse_date(row.get("LICENSE EXPIRATION DATE (MMDDCCYY)") or "")
+    expiry = _parse_date(row.get("license_expiration_date_mmddccyy") or "")
     today = date.today()
     status = "Expired" if expiry and expiry < today else "Active"
     return {
         "full_name": full_name or license_number,
-        "license_type": (row.get("LICENSE TYPE") or "").strip(),
+        "license_type": (row.get("license_type") or "").strip(),
         "license_number": license_number or None,
         "state": "TX",
         "status": status,
@@ -297,36 +314,67 @@ def _parse_tx_license_row(row: dict) -> Optional[dict]:
     }
 
 def _parse_or_license_row(row: dict) -> Optional[dict]:
-    full_name = (row.get("Full_Name") or row.get("DBA") or "").strip()
-    license_number = (row.get("LicNbr") or "").strip()
+    """data.oregon.gov/resource/vhbr-cuaq columns: 'licnbr', 'profession',
+    'lictype', 'full_name', 'dba', 'lic_status', 'expiration_date', ..."""
+    full_name = (row.get("full_name") or row.get("dba") or "").strip()
+    license_number = (row.get("licnbr") or "").strip()
     if not full_name and not license_number:
         return None
     return {
         "full_name": full_name or license_number,
-        "license_type": (row.get("Profession") or "").strip(),
+        "license_type": (row.get("profession") or "").strip(),
         "license_number": license_number or None,
         "state": "OR",
-        "status": (row.get("Lic_Status") or "").strip(),
+        "status": (row.get("lic_status") or "").strip(),
         "issued_date": None,
-        "expiry_date": _parse_date(row.get("Expiration_Date") or ""),
+        "expiry_date": _parse_date(row.get("expiration_date") or ""),
         "source_url": "https://www.oregon.gov/bcd/licensing",
     }
 
 
 def _parse_wa_license_row(row: dict) -> Optional[dict]:
-    full_name = (row.get("PrimaryPrincipalName") or row.get("BusinessName") or "").strip()
-    license_number = (row.get("ContractorLicenseNumber") or "").strip()
+    """data.wa.gov/resource/m8qx-ubtq columns: 'businessname',
+    'contractorlicensenumber', 'contractorlicensetypecodedesc',
+    'primaryprincipalname', 'contractorlicensestatus',
+    'licenseeffectivedate', 'licenseexpirationdate', ..."""
+    full_name = (row.get("primaryprincipalname") or row.get("businessname") or "").strip()
+    license_number = (row.get("contractorlicensenumber") or "").strip()
     if not full_name and not license_number:
         return None
     return {
         "full_name": full_name or license_number,
-        "license_type": (row.get("ContractorLicenseTypeCodeDesc") or "").strip(),
+        "license_type": (row.get("contractorlicensetypecodedesc") or "").strip(),
         "license_number": license_number or None,
         "state": "WA",
-        "status": (row.get("ContractorLicenseStatus") or "").strip().capitalize(),
-        "issued_date": _parse_date(row.get("LicenseEffectiveDate") or ""),
-        "expiry_date": _parse_date(row.get("LicenseExpirationDate") or ""),
+        "status": (row.get("contractorlicensestatus") or "").strip().capitalize(),
+        "issued_date": _parse_date(row.get("licenseeffectivedate") or ""),
+        "expiry_date": _parse_date(row.get("licenseexpirationdate") or ""),
         "source_url": "https://data.wa.gov/Labor/L-I-Contractor-License-Data-General/m8qx-ubtq",
+    }
+
+
+def _parse_ny_license_row(row: dict) -> Optional[dict]:
+    """data.ny.gov/resource/ucu3-8265 columns: 'license_number',
+    'license_type', 'license_holder_name', 'license_effective_term',
+    'license_expiration_date'. Dataset covers Appearance Enhancement,
+    Barber, Cosmetology, Nail, Esthetics, Natural Hair Styling, and
+    Waxing individual licenses."""
+    full_name = (row.get("license_holder_name") or "").strip()
+    license_number = (row.get("license_number") or "").strip()
+    if not full_name and not license_number:
+        return None
+    expiry = _parse_date(row.get("license_expiration_date") or "")
+    today = date.today()
+    status = "Expired" if expiry and expiry < today else "Active"
+    return {
+        "full_name": full_name or license_number,
+        "license_type": (row.get("license_type") or "").strip(),
+        "license_number": license_number or None,
+        "state": "NY",
+        "status": status,
+        "issued_date": None,
+        "expiry_date": expiry,
+        "source_url": "https://data.ny.gov/d/ucu3-8265",
     }
 
 
@@ -357,6 +405,7 @@ LICENSE_PARSERS = {
     "OR_LICENSE": _parse_or_license_row,
     "WA_LICENSE": _parse_wa_license_row,
     "CO_LICENSE": _parse_co_license_row,
+    "NY_LICENSE": _parse_ny_license_row,
 }
 
 # ---------------------------------------------------------------------------
@@ -567,7 +616,7 @@ def import_license_csv(file_path: Path, state: str, db: Session, limit: int = 0)
 def main():
     parser = argparse.ArgumentParser(description="Import bulk SOS business / license data")
     parser.add_argument("--state", required=True,
-                        choices=["NY", "FL", "CA", "CO", "IA", "OR", "CT", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE", "WA_LICENSE", "CO_LICENSE"],
+                        choices=["NY", "FL", "CA", "CO", "IA", "OR", "CT", "TX_LICENSE", "CT_LICENSE", "OR_LICENSE", "WA_LICENSE", "CO_LICENSE", "NY_LICENSE"],
                         help="State / dataset to import")
     parser.add_argument("--type", dest="import_type", default="business",
                         choices=["business", "license"],

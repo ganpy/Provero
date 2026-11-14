@@ -12,7 +12,7 @@ from api.models.license import License
 
 router = APIRouter()
 
-SUPPORTED_STATES = ["IL", "CT", "CO", "TX", "WA", "OR"]
+SUPPORTED_STATES = ["IL", "CT", "CO", "TX", "WA", "OR", "NY"]
 
 
 # ---------------------------------------------------------------------------
