@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout Cancelled — Provero</title>
+  <meta name="description" content="Your Provero checkout was cancelled. No charge was made." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="apple-touch-icon" href="provero_icon_512.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #080810;
+      --bg2: #0f0f1a;
+      --border: rgba(124,58,237,0.2);
+      --purple: #7c3aed;
+      --purple-light: #a78bfa;
+      --text: #f1f0ff;
+      --muted: #8b8aa0;
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      max-width: 480px; width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 32px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+    .logo {
+      font-size: 1.3rem; font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fff 0%, var(--purple-light) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 24px;
+    }
+    h1 { font-size: 26px; font-weight: 700; margin-bottom: 12px; letter-spacing: -0.5px; }
+    .subtitle { color: var(--muted); font-size: 15px; margin-bottom: 24px; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 12px 24px; border-radius: 10px;
+      font-weight: 600; font-size: 14px; cursor: pointer;
+      border: none; text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--purple); color: #fff; }
+    .btn-primary:hover { background: #6d28d9; }
+    .btn-outline {
+      background: transparent; color: var(--text);
+      border: 1px solid var(--border);
+      margin-left: 8px;
+    }
+    .btn-outline:hover { border-color: var(--purple-light); color: var(--purple-light); }
+    a.plain { color: var(--purple-light); }
+    a.plain:hover { text-decoration: underline; }
+    .help {
+      color: var(--muted); font-size: 13px; margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">Provero</div>
+    <h1>Checkout cancelled.</h1>
+    <p class="subtitle">
+      No charge was made. You can pick up where you left off whenever you&rsquo;re ready.
+    </p>
+    <a href="/#pricing" class="btn btn-primary">Back to pricing</a>
+    <a href="/" class="btn btn-outline">Home</a>
+    <p class="help">
+      Had an issue checking out? Email <a class="plain" href="mailto:provero@cabaana.com">provero@cabaana.com</a> and we&rsquo;ll help.
+    </p>
+  </div>
+</body>
+</html>
