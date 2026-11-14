@@ -181,6 +181,9 @@ def create_checkout_session(email: str, tier: str) -> str:
         # in by Stripe before redirecting the customer, not by Python.
         success_url=SUCCESS_URL + "?session_id={CHECKOUT_SESSION_ID}",
         cancel_url=CANCEL_URL,
+        # Show the "Promotion code" field on Checkout so customers can
+        # redeem Stripe promotion codes (e.g. WELCOMEBACK recovery offers).
+        allow_promotion_codes=True,
         # Metadata is echoed back in the webhook event so we know which
         # customer/tier to issue an API key for.
         metadata={"email": email, "tier": tier_key},
