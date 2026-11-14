@@ -8,10 +8,11 @@ from api.schemas.business import BusinessResponse, BusinessSearchResponse
 router = APIRouter()
 
 SUPPORTED_STATES = {
-    "DE": "Delaware",
-    "WY": "Wyoming",
-    "TX": "Texas",
     "NY": "New York",
+    "CO": "Colorado",
+    "OR": "Oregon",
+    "CT": "Connecticut",
+    "IA": "Iowa",
 }
 
 @router.get("/search", response_model=BusinessSearchResponse)
